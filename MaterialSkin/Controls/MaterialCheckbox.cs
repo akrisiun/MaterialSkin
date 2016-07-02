@@ -100,7 +100,8 @@ namespace MaterialSkin.Controls
         }
 
         private static readonly Point[] CHECKMARK_LINE = { new Point(3, 8), new Point(7, 12), new Point(14, 5) };
-        private const int TEXT_OFFSET = 22;
+        public const int TEXT_OFFSET = 22;
+
         protected override void OnPaint(PaintEventArgs pevent)
         {
             var g = pevent.Graphics;
@@ -168,7 +169,7 @@ namespace MaterialSkin.Controls
                     // g.DrawRectangle(new Pen(Parent.BackColor), boxOffset + 2, boxOffset + 2, CHECKBOX_INNER_BOX_SIZE - 1, CHECKBOX_INNER_BOX_SIZE - 1);
 
                     g.SmoothingMode = SmoothingMode.None;
-                    g.FillRectangle(brush, boxOffset , boxOffset , CHECKBOX_INNER_BOX_SIZE + 3, CHECKBOX_INNER_BOX_SIZE + 3);
+                    g.FillRectangle(brush, boxOffset, boxOffset, CHECKBOX_INNER_BOX_SIZE + 3, CHECKBOX_INNER_BOX_SIZE + 3);
                     g.SmoothingMode = SmoothingMode.AntiAlias;
                     g.DrawImageUnscaledAndClipped(DrawCheckMarkBitmap(), checkMarkLineFill);
 
@@ -183,16 +184,30 @@ namespace MaterialSkin.Controls
             }
 
             // draw checkbox text
-            SizeF stringSize = g.MeasureString(Text, SkinManager.ROBOTO_MEDIUM_10);
-            g.DrawString(
-                Text,
-                SkinManager.ROBOTO_MEDIUM_10,
-                Enabled ? SkinManager.GetPrimaryTextBrush() : SkinManager.GetDisabledOrHintBrush(),
-                boxOffset + TEXT_OFFSET, Height / 2 - stringSize.Height / 2);
+            DrawText(g);
 
             // dispose used paint objects
             pen.Dispose();
             brush.Dispose();
+        }
+
+        public delegate void PaintEventHandler(object sender, PaintEventArgs e);
+        public event PaintEventHandler OnDrawText;
+
+        public virtual void DrawText(Graphics g)
+        {
+            if (OnDrawText != null)
+            {
+                OnDrawText(this, new PaintEventArgs(g, ClientRectangle));
+                return;
+            }
+
+            SizeF stringSize = g.MeasureString(Text, SkinManager.ROBOTO_MEDIUM_10);
+            g.DrawString(
+                    Text,
+                    SkinManager.ROBOTO_MEDIUM_10,
+                    Enabled ? SkinManager.GetPrimaryTextBrush() : SkinManager.GetDisabledOrHintBrush(),
+                    boxOffset + TEXT_OFFSET, Height / 2 - stringSize.Height / 2);
         }
 
         private Bitmap DrawCheckMarkBitmap()

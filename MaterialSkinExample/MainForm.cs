@@ -14,12 +14,18 @@ namespace MaterialSkinExample
         private readonly MaterialSkinManager materialSkinManager;
         public MainForm() : base(true)
         {
+            materialSkinManager = MaterialSkinManager.Instance;
+            Font = materialSkinManager.ROBOTO_MEDIUM_12;
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+
+            StatusHeight = 16;
+            HeaderHeight = 18;
             InitializeComponent();
-            //AllowTransparency = false;
+            AllowTransparency = true;
             //SetStyle(ControlStyles.SupportsTransparentBackColor, false);
 
             // Initialize MaterialSkinManager
-            materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.AddFormToManage(this);
             materialSkinManager.ColorScheme = new ColorScheme(Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200, TextShade.WHITE);
 

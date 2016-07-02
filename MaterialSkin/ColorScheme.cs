@@ -1,10 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace MaterialSkin
 {
 	public class ColorScheme
     {
+        [CLSCompliant(false)]
+        public static Color ToColor(uint primary) { return ((int)primary).ToColor(); }
+        public static Color ToColor(int primary) { return ((int)primary).ToColor(); }
+
         public static ColorScheme Grey { get { return new ColorScheme(Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200, TextShade.WHITE); } }
         public static ColorScheme Green { get { return new ColorScheme(Primary.Green600, Primary.Green700, Primary.Green200, Accent.Red100, TextShade.WHITE); } }
         public static ColorScheme Indigo { get { return new ColorScheme(Primary.Indigo500, Primary.Indigo700, Primary.Indigo100, Accent.Pink200, TextShade.WHITE); } }
@@ -12,17 +17,27 @@ namespace MaterialSkin
         public readonly Color PrimaryColor, DarkPrimaryColor, LightPrimaryColor, AccentColor, TextColor;
         public readonly Pen PrimaryPen, DarkPrimaryPen, LightPrimaryPen, AccentPen, TextPen;
         public readonly Brush PrimaryBrush, DarkPrimaryBrush, LightPrimaryBrush, AccentBrush, TextBrush;
-		
-		/// <summary>
-		/// Defines the Color Scheme to be used for all forms.
-		/// </summary>
-		/// <param name="primary">The primary color, a -500 color is suggested here.</param>
-		/// <param name="darkPrimary">A darker version of the primary color, a -700 color is suggested here.</param>
-		/// <param name="lightPrimary">A lighter version of the primary color, a -100 color is suggested here.</param>
-		/// <param name="accent">The accent color, a -200 color is suggested here.</param>
-		/// <param name="textShade">The text color, the one with the highest contrast is suggested.</param>
-		public ColorScheme(Primary primary, Primary darkPrimary, Primary lightPrimary, Accent accent, TextShade textShade)
+
+        public ColorScheme(int primary, int darkPrimary, int lightPrimary, int accent, TextShade textShade)
+            : this(primary, darkPrimary, lightPrimary, accent, textShade, true)
+        { }
+
+
+        /// <summary>
+        /// Defines the Color Scheme to be used for all forms.
+        /// </summary>
+        /// <param name="primary">The primary color, a -500 color is suggested here.</param>
+        /// <param name="darkPrimary">A darker version of the primary color, a -700 color is suggested here.</param>
+        /// <param name="lightPrimary">A lighter version of the primary color, a -100 color is suggested here.</param>
+        /// <param name="accent">The accent color, a -200 color is suggested here.</param>
+        /// <param name="textShade">The text color, the one with the highest contrast is suggested.</param>
+        public ColorScheme(Primary primary, Primary darkPrimary, Primary lightPrimary, Accent accent, TextShade textShade)
+            : this((int)primary, (int)darkPrimary, (int)lightPrimary, (int)accent, textShade, true)
         {
+        }
+
+        protected ColorScheme(int primary, int darkPrimary, int lightPrimary, int accent, TextShade textShade, bool create)
+        { 
             //Color
             PrimaryColor = ((int) primary).ToColor();
             DarkPrimaryColor = ((int) darkPrimary).ToColor();
@@ -58,6 +73,15 @@ namespace MaterialSkin
                 (argb & 0xff0000) >> 16,
                 (argb & 0xff00) >> 8,
                  argb & 0xff);
+        }
+
+        [CLSCompliant(false)]
+        public static Color ToColor(this uint argb)
+        {
+            return Color.FromArgb(
+                ((int)argb & 0xff0000) >> 16,
+                ((int)argb & 0xff00) >> 8,
+                 (int)argb & 0xff);
         }
 
         /// <summary>

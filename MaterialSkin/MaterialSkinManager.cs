@@ -30,13 +30,13 @@ namespace MaterialSkin
             }
         }
 
-	    private ColorScheme colorScheme;
+        private ColorScheme colorScheme;
         public ColorScheme ColorScheme
         {
-			get { return colorScheme; }
+            get { return colorScheme; }
             set
             {
-				colorScheme = value;
+                colorScheme = value;
                 UpdateBackgrounds();
             }
         }
@@ -48,6 +48,19 @@ namespace MaterialSkin
         }
 
         #region Colors, Brushes
+
+        //Application background
+        private static readonly Color BACKGROUND_LIGHT = Color.FromArgb(255, 255, 255, 255);
+        private static Brush BACKGROUND_LIGHT_BRUSH = new SolidBrush(BACKGROUND_LIGHT);
+
+        // readonly 
+        private static Color _BACKGROUND_DARK = ColorScheme.ToColor(0xFF140404);        // ; // Color.FromArgb(255, 51, 51, 51);
+        public static Color BACKGROUND_DARK
+        {
+            get { return _BACKGROUND_DARK; }
+            set { _BACKGROUND_DARK = value; BACKGROUND_DARK_BRUSH = new SolidBrush(_BACKGROUND_DARK); }
+        }
+        private static Brush BACKGROUND_DARK_BRUSH = new SolidBrush(_BACKGROUND_DARK);
 
         //Constant color values
         private static readonly Color PRIMARY_TEXT_BLACK = Color.FromArgb(222, 0, 0, 0);
@@ -109,13 +122,6 @@ namespace MaterialSkin
         private static readonly Color CMS_BACKGROUND_DARK_HOVER = Color.FromArgb(38, 204, 204, 204);
         private static readonly Brush CMS_BACKGROUND_HOVER_DARK_BRUSH = new SolidBrush(CMS_BACKGROUND_DARK_HOVER);
 
-        //Application background
-        private static readonly Color BACKGROUND_LIGHT = Color.FromArgb(255, 255, 255, 255);
-        private static Brush BACKGROUND_LIGHT_BRUSH = new SolidBrush(BACKGROUND_LIGHT);
-
-        private static readonly Color BACKGROUND_DARK = Color.FromArgb(255, 51, 51, 51);
-        private static Brush BACKGROUND_DARK_BRUSH = new SolidBrush(BACKGROUND_DARK);
-
         //Application action bar
         public readonly Color ACTION_BAR_TEXT = Color.FromArgb(255, 255, 255, 255);
         public readonly Brush ACTION_BAR_TEXT_BRUSH = new SolidBrush(Color.FromArgb(255, 255, 255, 255));
@@ -130,17 +136,17 @@ namespace MaterialSkin
         public Brush GetPrimaryTextBrush()
         {
             return (Theme == Themes.LIGHT ? PRIMARY_TEXT_BLACK_BRUSH : PRIMARY_TEXT_WHITE_BRUSH);
-		}
+        }
 
-		public Color GetSecondaryTextColor()
-		{
-			return (Theme == Themes.LIGHT ? SECONDARY_TEXT_BLACK : SECONDARY_TEXT_WHITE);
-		}
+        public Color GetSecondaryTextColor()
+        {
+            return (Theme == Themes.LIGHT ? SECONDARY_TEXT_BLACK : SECONDARY_TEXT_WHITE);
+        }
 
-		public Brush GetSecondaryTextBrush()
-		{
-			return (Theme == Themes.LIGHT ? SECONDARY_TEXT_BLACK_BRUSH : SECONDARY_TEXT_WHITE_BRUSH);
-		}
+        public Brush GetSecondaryTextBrush()
+        {
+            return (Theme == Themes.LIGHT ? SECONDARY_TEXT_BLACK_BRUSH : SECONDARY_TEXT_WHITE_BRUSH);
+        }
 
         public Color GetDisabledOrHintColor()
         {
@@ -241,7 +247,7 @@ namespace MaterialSkin
             REGULAR = 2
         }
 
-        public static Func<FontType,FontFamily> LoadFontFunc { get; set; }
+        public static Func<FontType, FontFamily> LoadFontFunc { get; set; }
 
         //Other constants
         public int FORM_PADDING = 14;
@@ -253,17 +259,27 @@ namespace MaterialSkin
         {
             LoadFontFunc = (type) =>
             {
-                return LoadFont((byte[])(type == FontType.MEDIUM ? Resources.Roboto_Medium
-                        : type == FontType.REGULAR ? Resources.Roboto_Regular : (byte[])null)
-                        );
+                return null;
+                    //LoadFont((byte[])(type == FontType.MEDIUM ? Resources.Roboto_Medium
+                    //    : type == FontType.REGULAR ? Resources.Roboto_Regular : (byte[])null)
+                    //    );
             };
 
-            ROBOTO_MEDIUM_12 = new Font(LoadFontFunc(FontType.MEDIUM), 12f);
-            ROBOTO_MEDIUM_10 = new Font(LoadFontFunc(FontType.MEDIUM), 10f);
-            ROBOTO_REGULAR_11 = new Font(LoadFontFunc(FontType.REGULAR), 11f);
-            ROBOTO_MEDIUM_11 = new Font(LoadFontFunc(FontType.MEDIUM), 11f);
-			Theme = Themes.LIGHT;
-			ColorScheme = new ColorScheme(Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200, TextShade.WHITE);
+            ROBOTO_MEDIUM_12 = Font(LoadFontFunc(FontType.MEDIUM), 12f);
+            ROBOTO_MEDIUM_10 = Font(LoadFontFunc(FontType.MEDIUM), 10f);
+            ROBOTO_REGULAR_11 = Font(LoadFontFunc(FontType.REGULAR), 11f);
+            ROBOTO_MEDIUM_11 = Font(LoadFontFunc(FontType.MEDIUM), 11f);
+
+            Theme = Themes.LIGHT;
+            ColorScheme = new ColorScheme(Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200, TextShade.WHITE);
+        }
+
+        public static Font Font(object name, float size)
+        {
+            if (name is FontFamily)
+                return new Font(name as FontFamily, size);
+
+            return new Font("Calibri" as string, size);
         }
 
         public static MaterialSkinManager Instance
@@ -346,11 +362,11 @@ namespace MaterialSkin
                 controlToUpdate.BackColor = GetDividersColor();
             }
 
-	        if (controlToUpdate is MaterialListView)
-	        {
-		        controlToUpdate.BackColor = newBackColor;
+            if (controlToUpdate is MaterialListView)
+            {
+                controlToUpdate.BackColor = newBackColor;
 
-	        }
+            }
 
             //recursive call
             foreach (Control control in controlToUpdate.Controls)

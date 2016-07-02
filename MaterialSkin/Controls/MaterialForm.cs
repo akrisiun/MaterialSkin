@@ -34,13 +34,14 @@ namespace MaterialSkin.Controls
         public static extern bool ReleaseCapture();
 
         [DllImport("user32.dll")]
-        public static extern int TrackPopupMenuEx(IntPtr hmenu, uint fuFlags, int x, int y, IntPtr hwnd, IntPtr lptpm);
+        // uint
+        public static extern int TrackPopupMenuEx(IntPtr hmenu, int fuFlags, int x, int y, IntPtr hwnd, IntPtr lptpm);
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
 
         [DllImport("user32.dll")]
-        public static extern IntPtr MonitorFromWindow(IntPtr hwnd, UInt32 dwFlags);
+        public static extern IntPtr MonitorFromWindow(IntPtr hwnd, int dwFlags); // UInt32
 
         [DllImport("User32.dll", CharSet = CharSet.Auto)]
         public static extern bool GetMonitorInfo(HandleRef hmonitor, [In, Out] MONITORINFOEX info);
@@ -52,6 +53,30 @@ namespace MaterialSkin.Controls
         public const int WM_LBUTTONUP = 0x0202;
         public const int WM_LBUTTONDBLCLK = 0x0203;
         public const int WM_RBUTTONDOWN = 0x0204;
+        public const int WM_NCCALCSIZE = 0x0083;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NCCALCSIZE_PARAMS
+        {
+            // [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public RECT rgrc0, rgrc1, rgrc2;                    // Can't use an array here so simulate one
+            public WINDOWPOS lppos;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WINDOWPOS
+        {
+            public IntPtr hwnd;
+            public IntPtr hwndInsertAfter;
+            public int x;
+            public int y;
+            public int cx;
+            public int cy;
+
+            [CLSCompliant(false)]
+            public uint flags;
+        }
+
         private const int HTBOTTOMLEFT = 16;
         private const int HTBOTTOMRIGHT = 17;
         private const int HTLEFT = 10;
@@ -168,27 +193,109 @@ namespace MaterialSkin.Controls
 
         public MaterialForm(bool noBorder)
         {
+            StatusHeight = 0;
             if (noBorder)
+            {
+                HeaderHeight = 32;
                 FormBorderStyle = FormBorderStyle.None;
+            }
+            else
+            {
+                HeaderHeight = 0;
+            }
+
             Sizable = true;
             DoubleBuffered = true;
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor
-                   | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true); // | ControlStyles.SupportsTransparentBackColor
 
             // This enables the form to trigger the MouseMove event even when mouse is over another control
-            Application.AddMessageFilter(new MouseMessageFilter());
-            MouseMessageFilter.MouseMove += OnGlobalMouseMove;
+            if (Application.OpenForms.Count == 0)
+            {
+                Application.AddMessageFilter(new MouseMessageFilter());
+                MouseMessageFilter.MouseMove += OnGlobalMouseMove;
+            }
         }
+
+        public int HeaderHeight { get; set; }
+        public int StatusHeight { get; set; }
 
         public virtual void SetSkin()
         {
             SkinManager.AddFormToManage(this);
         }
 
+        #region Win32 dwmapi
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MARGINS
+        {
+            public int cxLeftWidth;
+            public int cxRightWidth;
+            public int cyTopHeight;
+            public int cyBottomHeight;
+
+            public MARGINS(int Left, int Right, int Top, int Bottom)
+            {
+                this.cxLeftWidth = Left;
+                this.cxRightWidth = Right;
+                this.cyTopHeight = Top;
+                this.cyBottomHeight = Bottom;
+            }
+        }
+
+        private MARGINS? _dwmMargins;
+
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmExtendFrameIntoClientArea(IntPtr hdc, ref MARGINS marInset);
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmIsCompositionEnabled(ref int pfEnabled);
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmDefWindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, out IntPtr result);
+
+        #endregion
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+
+            if (HeaderHeight > 2 && _dwmMargins == null)
+            {
+                var marg = new MARGINS();
+                DwmExtendFrameIntoClientArea(this.Handle, ref marg);
+                _dwmMargins = marg;
+            }
+        }
+
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
             if (DesignMode || IsDisposed) return;
+
+            if (HeaderHeight > 0 && m.Msg == WM_NCCALCSIZE && (int)m.WParam == 1)
+            {
+                NCCALCSIZE_PARAMS nccsp = (NCCALCSIZE_PARAMS)Marshal.PtrToStructure(m.LParam, typeof(NCCALCSIZE_PARAMS));
+
+                // Adjust (shrink) the client rectangle to accommodate the border:
+                var rect = nccsp.rgrc0;
+                // nccsp.rgrc[0].Top += 0;
+                //nccsp.rgrc[0].Bottom += 0;
+                //nccsp.rgrc[0].Left += 0;
+                //nccsp.rgrc[0].Right += 0;
+
+                if (_dwmMargins != null)
+                {
+                    //Set what client area would be for passing to DwmExtendIntoClientArea
+                    var cyTopHeight = nccsp.rgrc2.top - nccsp.rgrc1.top;
+                    var cxLeftWidth = nccsp.rgrc2.left - nccsp.rgrc1.left;
+                    var cyBottomHeight = HeaderHeight; // _buttonSize.Height + 2;
+                    var cxRightWidth = nccsp.rgrc1.right - nccsp.rgrc2.right;
+
+                    _dwmMargins = new MaterialForm.MARGINS(cxLeftWidth, cxRightWidth, cyTopHeight, cyBottomHeight);
+
+                }
+                Marshal.StructureToPtr(nccsp, m.LParam, false);
+                m.Result = IntPtr.Zero;
+                return;
+            }
 
             if (m.Msg == WM_LBUTTONDBLCLK)
             {
@@ -242,7 +349,7 @@ namespace MaterialSkin.Controls
                     // Show default system menu when right clicking titlebar
                     int id = TrackPopupMenuEx(
                         GetSystemMenu(Handle, false),
-                        TPM_LEFTALIGN | TPM_RETURNCMD,
+                        (int)(TPM_LEFTALIGN | TPM_RETURNCMD),
                         Cursor.Position.X, Cursor.Position.Y, Handle, IntPtr.Zero);
 
                     // Pass the command as a WM_SYSCOMMAND message
@@ -291,7 +398,9 @@ namespace MaterialSkin.Controls
 
             if (e.Button == MouseButtons.Left && !Maximized)
                 ResizeForm(resizeDir);
-            base.OnMouseDown(e);
+
+            if (e.Button != MouseButtons.Left || e.Y < Height - 3)
+                base.OnMouseDown(e);
         }
 
         protected override void OnMouseLeave(EventArgs e)
@@ -502,7 +611,7 @@ namespace MaterialSkin.Controls
             maxButtonBounds = new Rectangle((Width - SkinManager.FORM_PADDING / 2) - 2 * STATUS_BAR_BUTTON_WIDTH, 0, STATUS_BAR_BUTTON_WIDTH, STATUS_BAR_HEIGHT);
             xButtonBounds = new Rectangle((Width - SkinManager.FORM_PADDING / 2) - STATUS_BAR_BUTTON_WIDTH, 0, STATUS_BAR_BUTTON_WIDTH, STATUS_BAR_HEIGHT);
             statusBarBounds = new Rectangle(0, 0, Width, STATUS_BAR_HEIGHT);
-            actionBarBounds = new Rectangle(0, STATUS_BAR_HEIGHT, Width, ACTION_BAR_HEIGHT);
+            actionBarBounds = new Rectangle(0, STATUS_BAR_HEIGHT, Width, ACTION_BAR_HEIGHT); 
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -511,10 +620,16 @@ namespace MaterialSkin.Controls
             g.TextRenderingHint = TextRenderingHint.AntiAlias;
 
             g.Clear(SkinManager.GetApplicationBackgroundColor());
-            g.FillRectangle(SkinManager.ColorScheme.DarkPrimaryBrush, statusBarBounds);
-            g.FillRectangle(SkinManager.ColorScheme.PrimaryBrush, actionBarBounds);
+            if (StatusHeight > 0)
+            {
+                g.FillRectangle(SkinManager.ColorScheme.DarkPrimaryBrush, statusBarBounds);
+                g.FillRectangle(SkinManager.ColorScheme.PrimaryBrush, actionBarBounds);
+            }
 
-            if (FormBorderStyle == FormBorderStyle.None)
+            if (HeaderHeight >= 2)
+                base.OnPaint(e);
+
+            if (HeaderHeight > 3) //  FormBorderStyle == FormBorderStyle.None)
                 OnPaintBorder(g);
         }
 
@@ -602,11 +717,13 @@ namespace MaterialSkin.Controls
                 }
             }
 
-            if (ControlBox || MinimizeBox || MaximizeBox)
+            if (HeaderHeight > 5)
             {
                 //Form title
                 g.DrawString(Text, SkinManager.ROBOTO_MEDIUM_12, SkinManager.ColorScheme.TextBrush,
-                    new Rectangle(SkinManager.FORM_PADDING, STATUS_BAR_HEIGHT, Width, ACTION_BAR_HEIGHT), new StringFormat { LineAlignment = StringAlignment.Center });
+                    new Rectangle(SkinManager.FORM_PADDING, 3, Width - 100, HeaderHeight),
+                    // new Rectangle(SkinManager.FORM_PADDING, STATUS_BAR_HEIGHT, Width, ACTION_BAR_HEIGHT),
+                    new StringFormat { LineAlignment = StringAlignment.Center });
             }
         }
     }

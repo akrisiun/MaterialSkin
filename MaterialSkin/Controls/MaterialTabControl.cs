@@ -15,12 +15,6 @@ namespace MaterialSkin.Controls
 
         public IForm ParentForm { get { return base.Parent as IForm; } }
 
-        //protected override void OnLayout(LayoutEventArgs levent)
-        //{
-        //    base.OnLayout(levent);
-        //    Invalidate();
-        //}
-
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == 0x1328 && !DesignMode) m.Result = (IntPtr)1;
