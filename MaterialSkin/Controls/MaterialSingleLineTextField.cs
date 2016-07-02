@@ -1,13 +1,30 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Diagnostics;
+#if ANIMATE
 using MaterialSkin.Animations;
+#endif
 
 namespace MaterialSkin.Controls
 {
-    public class MaterialSingleLineTextField : Control, IMaterialControl
+
+    public class MaterialTextBox : MaterialSingleLineTextField
+    {
+        // public bool Multiline { get; set; }
+        public ScrollBars ScrollBars { get { return BaseText.ScrollBars; } set { BaseText.ScrollBars = value; } }
+        public bool Multiline { get { return BaseText.Multiline; } set { BaseText.Multiline = value; } }
+
+        public MaterialTextBox()
+            : base()
+        {
+        }
+    }
+
+    public class MaterialSingleLineTextField : Control, IMaterialControl // as TextBoxBase
     {
         //Properties for managing the material design properties
         [Browsable(false)]
@@ -17,10 +34,19 @@ namespace MaterialSkin.Controls
         [Browsable(false)]
         public MouseState MouseState { get; set; }
 
-        public override string Text { get { return baseTextBox.Text; } set { baseTextBox.Text = value; } }
+        public IForm ParentForm { get { return base.Parent as IForm; } }
+
+        #region TextBox wrap
+
+        public override string Text
+        {
+            get { return baseTextBox.Text; }
+            set { if (baseTextBox != null) baseTextBox.Text = value; }
+        }
         public new object Tag { get { return baseTextBox.Tag; } set { baseTextBox.Tag = value; } }
-        public new int MaxLength { get { return baseTextBox.MaxLength; } set { baseTextBox.MaxLength = value; } }
-        
+        //new
+        public int MaxLength { get { return baseTextBox.MaxLength; } set { baseTextBox.MaxLength = value; } }
+
         public string SelectedText { get { return baseTextBox.SelectedText; } set { baseTextBox.SelectedText = value; } }
         public string Hint { get { return baseTextBox.Hint; } set { baseTextBox.Hint = value; } }
 
@@ -33,10 +59,11 @@ namespace MaterialSkin.Controls
 
         public void SelectAll() { baseTextBox.SelectAll(); }
         public void Clear() { baseTextBox.Clear(); }
-        public void Focus() { baseTextBox.Focus(); }
+        public new void Focus() { baseTextBox.Focus(); }
 
+        #endregion
 
-        # region Forwarding events to baseTextBox
+        #region Forwarding events to baseTextBox
         public event EventHandler AcceptsTabChanged
         {
             add
@@ -936,15 +963,43 @@ namespace MaterialSkin.Controls
                 baseTextBox.VisibleChanged -= value;
             }
         }
-        # endregion
+        #endregion
 
+#if ANIMATE
         private readonly AnimationManager animationManager;
+#endif
+
+        #region ctor
 
         private readonly BaseTextBox baseTextBox;
-        public MaterialSingleLineTextField()
+        public BaseTextBox BaseText { [DebuggerStepThrough]  get { return baseTextBox; } }
+
+        //private static readonly int autoSize = BitVector32.CreateMask();
+        //private BitVector32 textBoxFlags = new BitVector32();
+
+        public bool ReadOnly { get { return baseTextBox.ReadOnly; } set { baseTextBox.ReadOnly = value; } }
+        public bool WordWrap { get { return baseTextBox.WordWrap; } set { baseTextBox.WordWrap = value; } }
+
+        public MaterialSingleLineTextField() : this(5) { }
+        public MaterialSingleLineTextField(int deltaY)
+            : base(null)
         {
+            //SetState2(STATE2_USEPREFERREDSIZECACHE, true);
+            //textBoxFlags[autoSize | hideSelection | wordWrap | shortcutsEnabled] = true;
+            //SetStyle(ControlStyles.FixedHeight, textBoxFlags[autoSize]);
+
+            //TextBoxBase
+            SetStyle(ControlStyles.StandardClick
+                    | ControlStyles.StandardDoubleClick
+                    | ControlStyles.UseTextForAccessibility
+                    | ControlStyles.UserPaint, false);
+
+            // cache requestedHeight. Note: Control calls DefaultSize (overridable) in the constructor
+            //requestedHeight = Height;
+
             SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.DoubleBuffer, true);
 
+#if ANIMATE
             animationManager = new AnimationManager
             {
                 Increment = 0.06,
@@ -952,15 +1007,15 @@ namespace MaterialSkin.Controls
                 InterruptAnimation = false
             };
             animationManager.OnAnimationProgress += sender => Invalidate();
+#endif
 
             baseTextBox = new BaseTextBox
             {
                 BorderStyle = BorderStyle.None,
                 Font = SkinManager.ROBOTO_REGULAR_11,
-                ForeColor = SkinManager.GetPrimaryTextColor(),
                 Location = new Point(0, 0),
                 Width = Width,
-                Height = Height - 5
+                Height = Height - deltaY
             };
 
             if (!Controls.Contains(baseTextBox) && !DesignMode)
@@ -968,44 +1023,60 @@ namespace MaterialSkin.Controls
                 Controls.Add(baseTextBox);
             }
 
+#if ANIMATE
             baseTextBox.GotFocus += (sender, args) => animationManager.StartNewAnimation(AnimationDirection.In);
             baseTextBox.LostFocus += (sender, args) => animationManager.StartNewAnimation(AnimationDirection.Out);
+#endif
             BackColorChanged += (sender, args) =>
             {
                 baseTextBox.BackColor = BackColor;
                 baseTextBox.ForeColor = SkinManager.GetPrimaryTextColor();
             };
 
-			//Fix for tabstop
-			baseTextBox.TabStop = true;
-			this.TabStop = false;
+            //Fix for tabstop
+            baseTextBox.TabStop = true;
+            this.TabStop = false;
         }
 
-        protected override void OnPaint(PaintEventArgs pevent)
+        #endregion
+
+        protected override void OnPaint(PaintEventArgs e)
         {
-            var g = pevent.Graphics;
+            var g = e.Graphics;
             g.Clear(Parent.BackColor);
+            var rec = e.ClipRectangle;
+            int lineY = baseTextBox.Bottom + 1;
 
-            int lineY = baseTextBox.Bottom + 3;
+#if !ANIMATE
+            //No animation
+            g.FillRectangle(baseTextBox.Focused ? SkinManager.ColorScheme.PrimaryBrush : SkinManager.GetDividersBrush(),
+              baseTextBox.Location.X, lineY, rec.Width, rec.Height); // baseTextBox.Focused ? 2 : 1);
+                                                                     // Height - lineY + 1
 
+            var brushLine = this.SkinManager.ColorScheme.LightPrimaryBrush;
+            g.FillRectangle(brushLine,
+              baseTextBox.Location.X, lineY, baseTextBox.Width, 5);
+#else
             if (!animationManager.IsAnimating())
             {
                 //No animation
-				g.FillRectangle(baseTextBox.Focused ? SkinManager.ColorScheme.PrimaryBrush : SkinManager.GetDividersBrush(), baseTextBox.Location.X, lineY, baseTextBox.Width, baseTextBox.Focused ? 2 : 1);
+				g.FillRectangle(baseTextBox.Focused ? SkinManager.ColorScheme.PrimaryBrush : SkinManager.GetDividersBrush(), 
+                    baseTextBox.Location.X, lineY, baseTextBox.Width, baseTextBox.Focused ? 2 : 1);
+                return; 
             }
-            else
-            {
-                //Animate
-                int animationWidth = (int)(baseTextBox.Width * animationManager.GetProgress());
-                int halfAnimationWidth = animationWidth / 2;
-                int animationStart = baseTextBox.Location.X + baseTextBox.Width / 2;
 
-                //Unfocused background
-                g.FillRectangle(SkinManager.GetDividersBrush(), baseTextBox.Location.X, lineY, baseTextBox.Width, 1);
+            //Animate
+            int animationWidth = (int)(baseTextBox.Width * 1.0); // animationManager.GetProgress());
+            animationWidth = (int)(baseTextBox.Width * animationManager.GetProgress());
+            int halfAnimationWidth = animationWidth / 2;
+            int animationStart = baseTextBox.Location.X + baseTextBox.Width / 2;
 
-                //Animated focus transition
-				g.FillRectangle(SkinManager.ColorScheme.PrimaryBrush, animationStart - halfAnimationWidth, lineY, animationWidth, 2);
-            }
+            //Unfocused background
+            g.FillRectangle(SkinManager.GetDividersBrush(), baseTextBox.Location.X, lineY, baseTextBox.Width, 1);
+
+            //Animated focus transition
+            g.FillRectangle(SkinManager.ColorScheme.PrimaryBrush, animationStart - halfAnimationWidth, lineY, animationWidth, 4);
+#endif
         }
 
         protected override void OnResize(EventArgs e)
@@ -1026,7 +1097,7 @@ namespace MaterialSkin.Controls
             baseTextBox.ForeColor = SkinManager.GetPrimaryTextColor();
         }
 
-        private class BaseTextBox : TextBox
+        public class BaseTextBox : TextBox
         {
             [DllImport("user32.dll", CharSet = CharSet.Auto)]
             private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, string lParam);
@@ -1060,16 +1131,16 @@ namespace MaterialSkin.Controls
 
             public new void SelectAll()
             {
-                BeginInvoke((MethodInvoker) delegate()
-                {
-                    base.Focus();
-                    base.SelectAll();
-                });
+                BeginInvoke((MethodInvoker)delegate()
+               {
+                   base.Focus();
+                   base.SelectAll();
+               });
             }
 
             public new void Focus()
             {
-                BeginInvoke((MethodInvoker)delegate ()
+                BeginInvoke((MethodInvoker)delegate()
                 {
                     base.Focus();
                 });

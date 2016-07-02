@@ -1,9 +1,12 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
+#if ANIMATE
 using MaterialSkin.Animations;
+#endif
 
 namespace MaterialSkin.Controls
 {
@@ -16,10 +19,13 @@ namespace MaterialSkin.Controls
         public MaterialSkinManager SkinManager { get { return MaterialSkinManager.Instance; } }
         [Browsable(false)]
         public MouseState MouseState { get; set; }
-        
 
+        public IForm ParentForm { get { return this.ParentForm as IForm; } }
+
+#if ANIMATE
         internal AnimationManager animationManager;
         internal Point animationSource;
+#endif
 
         public delegate void ItemClickStart(object sender, ToolStripItemClickedEventArgs e);
         public event ItemClickStart OnItemClickStart;
@@ -28,6 +34,7 @@ namespace MaterialSkin.Controls
         {
             Renderer = new MaterialToolStripRender();
 
+#if ANIMATE
             animationManager = new AnimationManager(false)
             {
                 Increment = 0.07,
@@ -35,7 +42,7 @@ namespace MaterialSkin.Controls
             };
             animationManager.OnAnimationProgress += sender => Invalidate();
             animationManager.OnAnimationFinished += sender => OnItemClicked(delayesArgs);
-
+#endif
             BackColor = SkinManager.GetApplicationBackgroundColor();
         }
 
@@ -43,7 +50,9 @@ namespace MaterialSkin.Controls
         {
             base.OnMouseUp(mea);
 
+#if ANIMATE
             animationSource = mea.Location;
+#endif
         }
 
         private ToolStripItemClickedEventArgs delayesArgs;
@@ -65,7 +74,9 @@ namespace MaterialSkin.Controls
                     if (OnItemClickStart != null) OnItemClickStart(this, e);
 
                     //Start animation
+#if ANIMATE
                     animationManager.StartNewAnimation(AnimationDirection.In);
+#endif
                 }
             }
         }
@@ -97,7 +108,9 @@ namespace MaterialSkin.Controls
         public int Depth { get; set; }
         public MaterialSkinManager SkinManager { get { return MaterialSkinManager.Instance; } }
         public MouseState MouseState { get; set; }
-        
+
+        public IForm ParentForm { get { return null; } } // this.ParentForm as IForm; } }
+        public IntPtr Handle { get; set; }
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
@@ -124,6 +137,7 @@ namespace MaterialSkin.Controls
             g.FillRectangle(e.Item.Selected && e.Item.Enabled ? SkinManager.GetCmsSelectedItemBrush() : new SolidBrush(SkinManager.GetApplicationBackgroundColor()), itemRect);
 
             //Ripple animation
+#if ANIMATE
             var toolStrip = e.ToolStrip as MaterialContextMenuStrip;
             if (toolStrip != null)
             {
@@ -140,6 +154,7 @@ namespace MaterialSkin.Controls
                     }
                 }
             }
+#endif
         }
 
         protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)

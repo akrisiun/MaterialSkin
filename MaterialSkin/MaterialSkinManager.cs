@@ -47,6 +47,8 @@ namespace MaterialSkin
             DARK
         }
 
+        #region Colors, Brushes
+
         //Constant color values
         private static readonly Color PRIMARY_TEXT_BLACK = Color.FromArgb(222, 0, 0, 0);
         private static readonly Brush PRIMARY_TEXT_BLACK_BRUSH = new SolidBrush(PRIMARY_TEXT_BLACK);
@@ -225,11 +227,21 @@ namespace MaterialSkin
             return (Theme == Themes.LIGHT ? BACKGROUND_LIGHT : BACKGROUND_DARK);
         }
 
+        #endregion
+
         //Roboto font
         public Font ROBOTO_MEDIUM_12;
         public Font ROBOTO_REGULAR_11;
         public Font ROBOTO_MEDIUM_11;
         public Font ROBOTO_MEDIUM_10;
+
+        public enum FontType : int
+        {
+            MEDIUM = 1,
+            REGULAR = 2
+        }
+
+        public static Func<FontType,FontFamily> LoadFontFunc { get; set; }
 
         //Other constants
         public int FORM_PADDING = 14;
@@ -239,10 +251,17 @@ namespace MaterialSkin
 
         private MaterialSkinManager()
         {
-            ROBOTO_MEDIUM_12 = new Font(LoadFont(Resources.Roboto_Medium), 12f);
-            ROBOTO_MEDIUM_10 = new Font(LoadFont(Resources.Roboto_Medium), 10f);
-            ROBOTO_REGULAR_11 = new Font(LoadFont(Resources.Roboto_Regular), 11f);
-            ROBOTO_MEDIUM_11 = new Font(LoadFont(Resources.Roboto_Medium), 11f);
+            LoadFontFunc = (type) =>
+            {
+                return LoadFont((byte[])(type == FontType.MEDIUM ? Resources.Roboto_Medium
+                        : type == FontType.REGULAR ? Resources.Roboto_Regular : (byte[])null)
+                        );
+            };
+
+            ROBOTO_MEDIUM_12 = new Font(LoadFontFunc(FontType.MEDIUM), 12f);
+            ROBOTO_MEDIUM_10 = new Font(LoadFontFunc(FontType.MEDIUM), 10f);
+            ROBOTO_REGULAR_11 = new Font(LoadFontFunc(FontType.REGULAR), 11f);
+            ROBOTO_MEDIUM_11 = new Font(LoadFontFunc(FontType.MEDIUM), 11f);
 			Theme = Themes.LIGHT;
 			ColorScheme = new ColorScheme(Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200, TextShade.WHITE);
         }

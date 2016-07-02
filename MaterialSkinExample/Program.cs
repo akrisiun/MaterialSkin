@@ -18,6 +18,11 @@ namespace MaterialSkinExample
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            var materialSkinManager = MaterialSkinManager.Instance;
+            materialSkinManager.Theme = MaterialSkinManager.Themes.DARK;
+            materialSkinManager.ColorScheme = ColorScheme.Green;
+
             Application.Run(new MainForm());
         }
     }

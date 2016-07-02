@@ -8,6 +8,8 @@ namespace MaterialSkin.Controls
     /// </summary>
     public class MaterialProgressBar : ProgressBar, IMaterialControl
     {
+        public IForm ParentForm { get { return base.FindForm() as IForm; } }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MaterialProgressBar"/> class.
         /// </summary>

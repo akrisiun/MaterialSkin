@@ -11,7 +11,9 @@ namespace MaterialSkin.Controls
         public MaterialSkinManager SkinManager { get { return MaterialSkinManager.Instance; } }
         [Browsable(false)]
         public MouseState MouseState { get; set; }
-        
+
+        public IForm ParentForm { get { return base.Parent as IForm; } }
+
         public MaterialDivider()
         {
             SetStyle(ControlStyles.SupportsTransparentBackColor, true);

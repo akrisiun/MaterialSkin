@@ -11,6 +11,9 @@ namespace MaterialSkin.Controls
         public MaterialSkinManager SkinManager { get { return MaterialSkinManager.Instance; } }
         [Browsable(false)]
         public MouseState MouseState { get; set; }
+
+        public IForm ParentForm { get { return base.FindForm() as IForm; } }
+
         protected override void OnCreateControl()
         {
             base.OnCreateControl();

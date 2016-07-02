@@ -3,10 +3,16 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
+#if ANIMATE
 using MaterialSkin.Animations;
+#endif
 
 namespace MaterialSkin.Controls
 {
+    public class MaterialButton : MaterialRaisedButton, IButton
+    {
+    }
+
     public class MaterialRaisedButton : Button, IMaterialControl
     {
         [Browsable(false)]
@@ -17,25 +23,33 @@ namespace MaterialSkin.Controls
         public MouseState MouseState { get; set; }
         public bool Primary { get; set; }
 
+        public IForm ParentForm { get { return base.Parent as IForm; } }
+
+#if ANIMATE
         private readonly AnimationManager animationManager;
+#endif
 
         public MaterialRaisedButton()
         {
             Primary = true;
 
+#if ANIMATE
             animationManager = new AnimationManager(false)
             {
                 Increment = 0.03,
                 AnimationType = AnimationType.EaseOut
             };
             animationManager.OnAnimationProgress += sender => Invalidate();
+#endif
         }
 
         protected override void OnMouseUp(MouseEventArgs mevent)
         {
             base.OnMouseUp(mevent);
 
+#if ANIMATE
             animationManager.StartNewAnimation(AnimationDirection.In, mevent.Location);
+#endif
         }
 
         protected override void OnPaint(PaintEventArgs pevent)
@@ -55,6 +69,7 @@ namespace MaterialSkin.Controls
                 g.FillPath(Primary ? SkinManager.ColorScheme.PrimaryBrush : SkinManager.GetRaisedButtonBackgroundBrush(), backgroundPath);
             }
 
+#if ANIMATE
             if (animationManager.IsAnimating())
             {
                 for (int i = 0; i < animationManager.GetAnimationCount(); i++)
@@ -66,6 +81,7 @@ namespace MaterialSkin.Controls
                     g.FillEllipse(rippleBrush, new Rectangle(animationSource.X - rippleSize / 2, animationSource.Y - rippleSize / 2, rippleSize, rippleSize));
                 }
             }
+#endif
 
             g.DrawString(
                 Text.ToUpper(),

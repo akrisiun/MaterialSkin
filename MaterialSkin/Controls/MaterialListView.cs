@@ -20,7 +20,9 @@ namespace MaterialSkin.Controls
 		[Browsable(false)]
 		public Point MouseLocation { get; set; }
 
-		public MaterialListView()
+        public IForm ParentForm { get { return FindForm() as IForm; } }
+
+        public MaterialListView()
 		{
 			GridLines = false;
 			FullRowSelect = true;

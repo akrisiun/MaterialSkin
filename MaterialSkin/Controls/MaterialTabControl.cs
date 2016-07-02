@@ -12,8 +12,16 @@ namespace MaterialSkin.Controls
         public MaterialSkinManager SkinManager { get { return MaterialSkinManager.Instance; } }
         [Browsable(false)]
         public MouseState MouseState { get; set; }
-        
-		protected override void WndProc(ref Message m)
+
+        public IForm ParentForm { get { return base.Parent as IForm; } }
+
+        //protected override void OnLayout(LayoutEventArgs levent)
+        //{
+        //    base.OnLayout(levent);
+        //    Invalidate();
+        //}
+
+        protected override void WndProc(ref Message m)
         {
             if (m.Msg == 0x1328 && !DesignMode) m.Result = (IntPtr)1;
             else base.WndProc(ref m);

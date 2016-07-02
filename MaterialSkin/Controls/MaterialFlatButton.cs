@@ -4,7 +4,9 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
+#if ANIMATE
 using MaterialSkin.Animations;
+#endif
 
 namespace MaterialSkin.Controls
 {
@@ -18,8 +20,12 @@ namespace MaterialSkin.Controls
         public MouseState MouseState { get; set; }
         public bool Primary { get; set; }
 
+        public IForm ParentForm { get { return base.Parent as IForm; } }
+
+#if ANIMATE
         private readonly AnimationManager animationManager;
         private readonly AnimationManager hoverAnimationManager;
+#endif
 
         private SizeF textSize;
 
@@ -27,6 +33,7 @@ namespace MaterialSkin.Controls
         {
             Primary = false;
 
+#if ANIMATE
             animationManager = new AnimationManager(false)
             {
                 Increment = 0.03,
@@ -40,6 +47,7 @@ namespace MaterialSkin.Controls
 
             hoverAnimationManager.OnAnimationProgress += sender => Invalidate();
             animationManager.OnAnimationProgress += sender => Invalidate();
+#endif
 
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
             AutoSize = true;
@@ -69,6 +77,7 @@ namespace MaterialSkin.Controls
 
             //Hover
             Color c = SkinManager.GetFlatButtonHoverBackgroundColor();
+#if ANIMATE
             using (Brush b = new SolidBrush(Color.FromArgb((int)(hoverAnimationManager.GetProgress() * c.A), c.RemoveAlpha())))
                 g.FillRectangle(b, ClientRectangle);
 
@@ -89,6 +98,7 @@ namespace MaterialSkin.Controls
                 }
                 g.SmoothingMode = SmoothingMode.None;
             }
+#endif
 			g.DrawString(Text.ToUpper(), SkinManager.ROBOTO_MEDIUM_10, Enabled ? (Primary ? SkinManager.ColorScheme.PrimaryBrush : SkinManager.GetPrimaryTextBrush()) : SkinManager.GetFlatButtonDisabledTextBrush(), ClientRectangle, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
         }
 
@@ -111,14 +121,18 @@ namespace MaterialSkin.Controls
             MouseEnter += (sender, args) =>
             {
                 MouseState = MouseState.HOVER;
+#if ANIMATE
                 hoverAnimationManager.StartNewAnimation(AnimationDirection.In);
                 Invalidate();
+#endif
             };
             MouseLeave += (sender, args) =>
             {
                 MouseState = MouseState.OUT;
+#if ANIMATE
                 hoverAnimationManager.StartNewAnimation(AnimationDirection.Out);
                 Invalidate();
+#endif
             };
             MouseDown += (sender, args) =>
             {
@@ -126,8 +140,10 @@ namespace MaterialSkin.Controls
                 {
                     MouseState = MouseState.DOWN;
 
+#if ANIMATE
                     animationManager.StartNewAnimation(AnimationDirection.In, args.Location);
                     Invalidate();
+#endif
                 }
             };
             MouseUp += (sender, args) =>

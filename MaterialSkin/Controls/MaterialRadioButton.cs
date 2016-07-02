@@ -4,7 +4,9 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
+#if ANIMATE
 using MaterialSkin.Animations;
+#endif
 
 namespace MaterialSkin.Controls
 {
@@ -18,6 +20,8 @@ namespace MaterialSkin.Controls
         public MouseState MouseState { get; set; }
         [Browsable(false)]
         public Point MouseLocation { get; set; }
+
+        public IForm ParentForm { get { return base.FindForm() as IForm; } }
 
         private bool ripple;
         [Category("Behavior")]
@@ -38,9 +42,11 @@ namespace MaterialSkin.Controls
             }
         }
 
+#if ANIMATE
 		// animation managers
         private readonly AnimationManager animationManager;
         private readonly AnimationManager rippleAnimationManager;
+#endif
 
 		// size related variables which should be recalculated onsizechanged
 		private Rectangle radioButtonBounds;
@@ -56,6 +62,7 @@ namespace MaterialSkin.Controls
 		{
 			SetStyle(ControlStyles.DoubleBuffer | ControlStyles.OptimizedDoubleBuffer, true);
 
+#if ANIMATE
             animationManager = new AnimationManager
             {
                 AnimationType = AnimationType.EaseInOut,
@@ -71,7 +78,7 @@ namespace MaterialSkin.Controls
             rippleAnimationManager.OnAnimationProgress += sender => Invalidate();
 
             CheckedChanged += (sender, args) => animationManager.StartNewAnimation(Checked ? AnimationDirection.In : AnimationDirection.Out);
-			
+#endif			
             SizeChanged += OnSizeChanged;
 
             Ripple = true;
@@ -100,7 +107,10 @@ namespace MaterialSkin.Controls
 
             var RADIOBUTTON_CENTER = boxOffset + RADIOBUTTON_SIZE_HALF;
 
-            var animationProgress = animationManager.GetProgress();
+            var animationProgress = 1.0;
+#if ANIMATE
+            animationProgress = animationManager.GetProgress();
+#endif
 
             int colorAlpha = Enabled ? (int)(animationProgress * 255.0) : SkinManager.GetCheckBoxOffDisabledColor().A;
             int backgroundAlpha = Enabled ? (int)(SkinManager.GetCheckboxOffColor().A * (1.0 - animationProgress)) : SkinManager.GetCheckBoxOffDisabledColor().A;
@@ -112,6 +122,7 @@ namespace MaterialSkin.Controls
             var pen = new Pen(brush.Color);
 
             // draw ripple animation
+#if ANIMATE
             if (Ripple && rippleAnimationManager.IsAnimating())
             {
                 for (int i = 0; i < rippleAnimationManager.GetAnimationCount(); i++)
@@ -129,7 +140,7 @@ namespace MaterialSkin.Controls
                     rippleBrush.Dispose();
                 }
             }
-
+#endif
             // draw radiobutton circle
             Color uncheckedColor = DrawHelper.BlendColor(Parent.BackColor, Enabled ? SkinManager.GetCheckboxOffColor() : SkinManager.GetCheckBoxOffDisabledColor(), backgroundAlpha);
 
@@ -190,16 +201,20 @@ namespace MaterialSkin.Controls
             {
                 MouseState = MouseState.DOWN;
 
+#if ANIMATE
                 if (Ripple && args.Button == MouseButtons.Left && IsMouseInCheckArea())
                 {
                     rippleAnimationManager.SecondaryIncrement = 0;
                     rippleAnimationManager.StartNewAnimation(AnimationDirection.InOutIn, new object[] { Checked });
                 }
+#endif
             };
             MouseUp += (sender, args) =>
             {
                 MouseState = MouseState.HOVER;
+#if ANIMATE
                 rippleAnimationManager.SecondaryIncrement = 0.08;
+#endif
             };
             MouseMove += (sender, args) =>
             {
