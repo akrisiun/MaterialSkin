@@ -255,7 +255,7 @@ namespace MaterialSkin
         [DllImport("gdi32.dll")]
         private static extern IntPtr AddFontMemResourceEx(IntPtr pbFont, uint cbFont, IntPtr pvd, [In] ref uint pcFonts);
 
-        private MaterialSkinManager()
+        public MaterialSkinManager()
         {
             LoadFontFunc = (type) =>
             {
