@@ -18,10 +18,7 @@ namespace MaterialSkin.Controls
         public ScrollBars ScrollBars { get { return BaseText.ScrollBars; } set { BaseText.ScrollBars = value; } }
         public bool Multiline { get { return BaseText.Multiline; } set { BaseText.Multiline = value; } }
 
-        public MaterialTextBox()
-            : base()
-        {
-        }
+        public MaterialTextBox() : base() { }
     }
 
     public class MaterialSingleLineTextField : Control, IMaterialControl // as TextBoxBase
@@ -969,33 +966,26 @@ namespace MaterialSkin.Controls
         private readonly AnimationManager animationManager;
 #endif
 
+        public bool ReadOnly { get { return baseTextBox.ReadOnly; } set { baseTextBox.ReadOnly = value; } }
+        public bool WordWrap { get { return baseTextBox.WordWrap; } set { baseTextBox.WordWrap = value; } }
+
         #region ctor
 
         private readonly BaseTextBox baseTextBox;
         public BaseTextBox BaseText { [DebuggerStepThrough]  get { return baseTextBox; } }
 
-        //private static readonly int autoSize = BitVector32.CreateMask();
-        //private BitVector32 textBoxFlags = new BitVector32();
-
-        public bool ReadOnly { get { return baseTextBox.ReadOnly; } set { baseTextBox.ReadOnly = value; } }
-        public bool WordWrap { get { return baseTextBox.WordWrap; } set { baseTextBox.WordWrap = value; } }
-
-        public MaterialSingleLineTextField() : this(5) { }
+        public MaterialSingleLineTextField() : this(4) { }
         public MaterialSingleLineTextField(int deltaY)
             : base(null)
         {
-            //SetState2(STATE2_USEPREFERREDSIZECACHE, true);
-            //textBoxFlags[autoSize | hideSelection | wordWrap | shortcutsEnabled] = true;
-            //SetStyle(ControlStyles.FixedHeight, textBoxFlags[autoSize]);
-
             //TextBoxBase
             SetStyle(ControlStyles.StandardClick
                     | ControlStyles.StandardDoubleClick
                     | ControlStyles.UseTextForAccessibility
-                    | ControlStyles.UserPaint, false);
+                    | ControlStyles.UserPaint, true);
 
             // cache requestedHeight. Note: Control calls DefaultSize (overridable) in the constructor
-            //requestedHeight = Height;
+            // requestedHeight = Height;
 
             SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.DoubleBuffer, true);
 
@@ -1050,12 +1040,7 @@ namespace MaterialSkin.Controls
 #if !ANIMATE
             //No animation
             g.FillRectangle(baseTextBox.Focused ? SkinManager.ColorScheme.PrimaryBrush : SkinManager.GetDividersBrush(),
-              baseTextBox.Location.X, lineY, rec.Width, rec.Height); // baseTextBox.Focused ? 2 : 1);
-                                                                     // Height - lineY + 1
-
-            var brushLine = this.SkinManager.ColorScheme.LightPrimaryBrush;
-            g.FillRectangle(brushLine,
-              baseTextBox.Location.X, lineY, baseTextBox.Width, 5);
+              baseTextBox.Location.X, lineY, rec.Width, baseTextBox.Focused ? 2 : 1);
 #else
             if (!animationManager.IsAnimating())
             {
@@ -1131,7 +1116,7 @@ namespace MaterialSkin.Controls
 
             public new void SelectAll()
             {
-                BeginInvoke((MethodInvoker)delegate()
+                BeginInvoke((MethodInvoker)delegate ()
                {
                    base.Focus();
                    base.SelectAll();
@@ -1140,7 +1125,7 @@ namespace MaterialSkin.Controls
 
             public new void Focus()
             {
-                BeginInvoke((MethodInvoker)delegate()
+                BeginInvoke((MethodInvoker)delegate ()
                 {
                     base.Focus();
                 });

@@ -15,17 +15,25 @@ namespace MaterialSkinExample
         public MainForm() : base(true)
         {
             InitializeComponent();
+            //AllowTransparency = false;
+            //SetStyle(ControlStyles.SupportsTransparentBackColor, false);
 
             // Initialize MaterialSkinManager
             materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.AddFormToManage(this);
-			materialSkinManager.ColorScheme = new ColorScheme(Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200, TextShade.WHITE);
+            materialSkinManager.ColorScheme = new ColorScheme(Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200, TextShade.WHITE);
 
-            tabPage1.BackColor = materialSkinManager.ColorScheme.DarkPrimaryColor;
-
-			// Add dummy data to the listview
-	        seedListView();
+            // Add dummy data to the listview
+            seedListView();
         }
+
+        //protected override void OnShown(EventArgs e)
+        //{
+        //    base.OnShown(e);
+
+        //    tabPage1.BackColor = materialSkinManager.ColorScheme.DarkPrimaryColor;
+        //    tabPage1.Invalidate();
+        //}
 
 	    private void seedListView()
 	    {

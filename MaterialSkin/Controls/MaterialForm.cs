@@ -180,6 +180,11 @@ namespace MaterialSkin.Controls
             MouseMessageFilter.MouseMove += OnGlobalMouseMove;
         }
 
+        public virtual void SetSkin()
+        {
+            SkinManager.AddFormToManage(this);
+        }
+
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
