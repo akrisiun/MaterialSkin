@@ -325,7 +325,7 @@ namespace MaterialSkin
 
         private void UpdateToolStrip(ToolStrip toolStrip, Color newBackColor)
         {
-            if (toolStrip == null) return;
+            if (toolStrip == null || toolStrip.InvokeRequired) return;
 
             toolStrip.BackColor = newBackColor;
             foreach (ToolStripItem control in toolStrip.Items)
